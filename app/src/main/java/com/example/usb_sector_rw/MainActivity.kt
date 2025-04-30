@@ -278,19 +278,44 @@ class MainActivity : AppCompatActivity() {
             val deviceList = usbManager.deviceList
 
             if (deviceList.isEmpty()) {
-                log("No USB devices found")
+                log("No USB devices found.")
             } else {
-                log("Found ${deviceList.size} USB devices:")
+                log("Detected ${deviceList.size} USB device(s).\n")
 
                 for ((_, device) in deviceList) {
-                    log("Device: ${device.deviceName}, class=${device.deviceClass}, vendorId=${device.vendorId}, productId=${device.productId}")
+                    val hasPermission = usbManager.hasPermission(device)
 
-                    if (!usbManager.hasPermission(device)) {
-                        val permissionIntent = PendingIntent.getBroadcast(this, 0, Intent("android.hardware.usb.action.USB_PERMISSION"), PendingIntent.FLAG_IMMUTABLE)
+                    val info = StringBuilder()
+                    info.appendLine("Device: ${device.deviceName}")
+                    info.appendLine("  Vendor ID      : ${device.vendorId}")
+                    info.appendLine("  Product ID     : ${device.productId}")
+                    info.appendLine("  Class          : ${device.deviceClass}")
+                    info.appendLine("  Subclass       : ${device.deviceSubclass}")
+                    info.appendLine("  Protocol       : ${device.deviceProtocol}")
+                    info.appendLine("  Manufacturer   : ${device.manufacturerName ?: "Unknown"}")
+                    info.appendLine("  Product Name   : ${device.productName ?: "Unknown"}")
+                    info.appendLine("  Serial Number  : ${device.serialNumber ?: "Unknown"}")
+                    info.appendLine("  Version        : ${device.version ?: "Unknown"}")
+                    info.appendLine("  Configuration Count: ${device.configurationCount}")
+                    for (i in 0 until device.configurationCount) {
+                        val config = device.getConfiguration(i)
+                        info.appendLine("    Configuration $i:")
+                        for (j in 0 until config.interfaceCount) {
+                            val intf = config.getInterface(j)
+                            info.appendLine("      Interface $j: class=${intf.interfaceClass}, subclass=${intf.interfaceSubclass}, protocol=${intf.interfaceProtocol}")
+                        }
+                    }
+                    log(info.toString())
+
+                    if (!hasPermission) {
+                        val permissionIntent = PendingIntent.getBroadcast(
+                            this,
+                            0,
+                            Intent("android.hardware.usb.action.USB_PERMISSION"),
+                            PendingIntent.FLAG_IMMUTABLE
+                        )
                         usbManager.requestPermission(device, permissionIntent)
-                        log("Permission requested for device ${device.deviceName}")
-                    } else {
-                        log("Permission already granted for device ${device.deviceName}")
+                        log("Requested permission for ${device.deviceName}")
                     }
                 }
             }
