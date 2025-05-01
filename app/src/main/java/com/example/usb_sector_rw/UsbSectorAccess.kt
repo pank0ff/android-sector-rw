@@ -296,40 +296,83 @@ class UsbSectorAccess(
      * Partially overwrites one or more sectors starting at the specified LBA, beginning at a given byte offset.
      * If the data exceeds the remaining bytes in the first sector, it continues into subsequent sectors.
      *
-     * @param lba the Logical Block Address of the first sector to modify.
-     * @param offset the byte offset within the first sector to start writing.
-     * @param newData the data to write. It may span multiple sectors depending on size and offset.
-     * @return true if all modified sectors are successfully written, false otherwise.
+     * @return Result.success("OK") если успешно, иначе Result.failure(Exception("сообщение"))
      */
-    fun overwriteSectorBytes(lba: Long, offset: Int, newData: ByteArray): Boolean {
+    fun overwriteSectorBytes(lba: Long, offset: Int, newData: ByteArray): Result<String> {
         if (offset < 0 || newData.isEmpty()) {
-            Log.e(TAG, "Invalid offset or data size")
-            return false
+            val msg = "Invalid offset=$offset or data is empty"
+            Log.e(TAG, msg)
+            return Result.failure(IllegalArgumentException(msg))
         }
 
-        val endOffset = offset + newData.size
-        val sectorsNeeded = (endOffset + blockSize - 1) / blockSize
-        var innerOffset = offset
+        val totalBytes = offset + newData.size
+        val sectorsNeeded = (totalBytes + blockSize - 1) / blockSize
+        var dataOffset = 0
 
-        for(i in 0 until  sectorsNeeded)
-        {
-            val originalData = readSectors(lba + i, 1)
-            if (originalData == null)
-            {
-                Log.e(TAG, "Failed to read 1 sector(s) from LBA=${lba + i}")
-                return false
+        Log.d(TAG, "overwriteSectorBytes: offset=$offset, newData=${newData.size}, sectors=$sectorsNeeded")
+
+        for (i in 0 until sectorsNeeded) {
+            val sectorLba = lba + i
+            val sectorData = readSectors(sectorLba, 1)
+
+            if (sectorData == null || sectorData.size != blockSize) {
+                val msg = "Failed to read sector $sectorLba"
+                Log.e(TAG, msg)
+                return Result.failure(RuntimeException(msg))
             }
 
-            System.arraycopy(newData, 0, originalData, innerOffset, originalData.size - innerOffset)
-            innerOffset = 0
+            val sectorOffset = if (i == 0) offset else 0
+            val bytesAvailable = blockSize - sectorOffset
+            val bytesToCopy = minOf(newData.size - dataOffset, bytesAvailable)
 
-            val success = writeSectors(lba + i, originalData)
+            if (bytesToCopy <= 0) break
+
+            try {
+                System.arraycopy(newData, dataOffset, sectorData, sectorOffset, bytesToCopy)
+            } catch (e: Exception) {
+                val msg = "Array copy failed at sector $sectorLba: ${e.message}"
+                Log.e(TAG, msg)
+                return Result.failure(e)
+            }
+
+            val success = writeSectors(sectorLba, sectorData)
             if (!success) {
-                Log.e(TAG, "Failed to write modified sectors at LBA=${lba + 1}")
-                return false
+                val msg = "Failed to write sector $sectorLba"
+                Log.e(TAG, msg)
+                return Result.failure(RuntimeException(msg))
             }
+
+            Log.d(TAG, "Sector $sectorLba written: copied $bytesToCopy bytes from newData[$dataOffset]")
+            dataOffset += bytesToCopy
         }
 
-        return true
+        return Result.success("Write successful")
+    }
+
+    /**
+     * Reads a specific number of bytes from the given LBA and byte offset.
+     * The data may span multiple sectors if necessary.
+     *
+     * @param lba the starting Logical Block Address (sector) to read from.
+     * @param offset the byte offset within the first sector.
+     * @param length the number of bytes to read.
+     * @return a ByteArray containing the requested data, or null on error.
+     */
+    fun readSectorBytes(lba: Long, offset: Int, length: Int): ByteArray? {
+        if (offset < 0 || length <= 0) {
+            Log.e(TAG, "Invalid offset or length")
+            return null
+        }
+
+        val endOffset = offset + length
+        val sectorsNeeded = (endOffset + blockSize - 1) / blockSize
+
+        val rawData = readSectors(lba, sectorsNeeded)
+        if (rawData == null || rawData.size < endOffset) {
+            Log.e(TAG, "Failed to read $sectorsNeeded sectors from LBA=$lba or insufficient data")
+            return null
+        }
+
+        return rawData.copyOfRange(offset, offset + length)
     }
 }

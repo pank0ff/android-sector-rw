@@ -23,6 +23,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+    <EditText
+        android:id="@+id/lengthInput"
+        android:hint="Length (bytes)"
+        android:inputType="number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <Button
         android:id="@+id/readBtn"
         android:text="Read Sector"
@@ -52,6 +59,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Scan USB"/>
+    
+    <Button
+        android:id="@+id/readBytesBtn"
+        android:text="Read Bytes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <TextView
         android:id="@+id/logText"

@@ -41,6 +41,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var overwriteBtn: Button
     private lateinit var logText: TextView
     private lateinit var offsetInput: TextView
+    private lateinit var readBytesBtn: Button
+    private lateinit var lengthInput: TextView
 
     /**
      * BroadcastReceiver that handles USB permission responses.
@@ -69,6 +71,8 @@ class MainActivity : AppCompatActivity() {
         scanBtn = findViewById(R.id.scanBtn)
         overwriteBtn = findViewById(R.id.overwriteBtn)
         offsetInput = findViewById(R.id.offsetInput)
+        lengthInput = findViewById<EditText>(R.id.lengthInput)
+        readBytesBtn = findViewById<Button>(R.id.readBytesBtn)
 
         dataInput.addTextChangedListener(object : android.text.TextWatcher {
             private var previous = ""
@@ -331,6 +335,11 @@ class MainActivity : AppCompatActivity() {
             val offset = offsetInput.text.toString().toIntOrNull()
             val dataHex = dataInput.text.toString().replace(" ", "")
 
+            if (!usbAccess.connect()) {
+                log("Failed to connect to USB device")
+                return@setOnClickListener
+            }
+
             if (lba == null || offset == null) {
                 logText.append("\nInvalid sector number or offset")
                 return@setOnClickListener
@@ -342,8 +351,60 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val success = usbAccess.overwriteSectorBytes(lba, offset, dataBytes)
-            logText.append("\nOverwrite ${if (success) "successful" else "failed"} at LBA=$lba, offset=$offset")
+            if (!usbAccess.readCapacity()) {
+                log("Failed to read device capacity")
+                usbAccess.close()
+                return@setOnClickListener
+            }
+
+            val result = usbAccess.overwriteSectorBytes(lba, offset, dataBytes)
+            result.fold(
+                onSuccess = {
+                    logText.append("\nOverwrite successful at LBA=$lba, offset=$offset")
+                },
+                onFailure = {
+                    logText.append("\nOverwrite failed at LBA=$lba, offset=$offset: ${it.message}")
+                }
+            )
+        }
+
+        readBytesBtn.setOnClickListener {
+            val usbAccess = UsbSectorAccess(this)
+
+            if (!usbAccess.connect()) {
+                log("Failed to connect to USB device")
+                return@setOnClickListener
+            }
+
+            val sector = sectorInput.text.toString().toLongOrNull()
+            val offset = offsetInput.text.toString().toIntOrNull()
+            val length = lengthInput.text.toString().toIntOrNull()
+
+            if (sector == null || offset == null || length == null || length <= 0) {
+                log("Invalid input for sector, offset or length")
+                usbAccess.close()
+                return@setOnClickListener
+            }
+
+            if (!usbAccess.readCapacity()) {
+                log("Failed to read device capacity")
+                usbAccess.close()
+                return@setOnClickListener
+            }
+
+            val result = usbAccess.readSectorBytes(sector, offset, length)
+            if (result != null) {
+                val hex = result.joinToString(" ") { "%02X".format(it) }
+                log("Read $length byte(s) from sector $sector at offset $offset:\n$hex")
+            } else {
+                log("Read failed")
+                val sense = usbAccess.requestSense()
+                if (sense != null) {
+                    log("REQUEST SENSE: ${sense.joinToString(" ") { "%02X".format(it) }}")
+                }
+            }
+
+            usbAccess.close()
         }
     }
 
