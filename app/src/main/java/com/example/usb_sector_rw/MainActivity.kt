@@ -169,8 +169,8 @@ class MainActivity : AppCompatActivity() {
 
             val data = usbAccess.readSectors(sector, 1)
             if (data != null) {
-                val hex = data.joinToString(" ") { "%02X".format(it) }
-                log("Read from sector $sector:\n$hex")
+                val formatted = formatSectorAsHexAscii(data)
+                log("Read from sector $sector:\n$formatted")
             } else {
                 log("Read failed for sector $sector")
 
@@ -316,6 +316,28 @@ class MainActivity : AppCompatActivity() {
                     info.appendLine("  Serial Number  : ${device.serialNumber ?: "Unknown"}")
                     info.appendLine("  Version        : ${device.version ?: "Unknown"}")
                     info.appendLine("  Configuration Count: ${device.configurationCount}")
+
+                    // Trying to retrieve maxLBA if possible
+                    val usbAccess = UsbSectorAccess(this)
+                    if (usbAccess.connect()) {
+                        val maxLBA = usbAccess.maxLBA
+                        val blockSize = usbAccess.blockSize
+                        if (maxLBA > 0) {
+                            info.appendLine("  LBA        : $maxLBA sectors")
+                            info.appendLine("  Sector size: $blockSize b")
+                            info.appendLine("  Size       : ${formatSize(maxLBA * blockSize)}")
+                        } else {
+                            info.appendLine("  LBA        : Not permitted or not available")
+                            info.appendLine("  Sector size: Not permitted or not available")
+                            info.appendLine("  Size       : Not permitted or not available")
+                        }
+                        usbAccess.close()
+                    } else {
+                        info.appendLine("  LBA        : Not permitted")
+                        info.appendLine("  Sector size: Not permitted")
+                        info.appendLine("  Size       : Not permitted")
+                    }
+
                     for (i in 0 until device.configurationCount) {
                         val config = device.getConfiguration(i)
                         info.appendLine("    Configuration $i:")
@@ -394,8 +416,8 @@ class MainActivity : AppCompatActivity() {
 
             val result = usbAccess.readSectorBytes(sector, offset, length)
             if (result != null) {
-                val hex = result.joinToString(" ") { "%02X".format(it) }
-                log("Read $length byte(s) from sector $sector at offset $offset:\n$hex")
+                val formatted = formatSectorAsHexAscii(result)
+                log("Read $length byte(s) from sector $sector at offset $offset:\n$formatted")
             } else {
                 log("Read failed")
                 val sense = usbAccess.requestSense()
@@ -478,5 +500,41 @@ class MainActivity : AppCompatActivity() {
             bytes[i / 2] = hexPair.toInt(16).toByte()
         }
         return bytes
+    }
+
+    /**
+     * Formats a given byte array as hexadecimal and ASCII representations, with 16 bytes per line.
+     * The output consists of each line displaying the offset (in hexadecimal), the hex values of the bytes,
+     * and the ASCII equivalent of the byte values. Non-printable characters are represented by a period ('.').
+     *
+     * @param data The byte array to be formatted.
+     * @return A string representing the formatted data in both hexadecimal and ASCII, with each line containing 16 bytes.
+     */
+    private fun formatSectorAsHexAscii(data: ByteArray): String {
+        return data.toList().chunked(16).withIndex().joinToString("\n") { (index, line) ->
+            val hex = line.joinToString(" ") { "%02X".format(it) }
+            val ascii = line.map { if (it in 32..126) it.toInt().toChar() else '.' }.joinToString("")
+            "%04X: %-48s  %s".format(index * 16, hex, ascii)
+        }
+    }
+
+    /**
+     * Converts a byte value to a human-readable size representation (e.g. B, KB, MB, GB).
+     * The function scales the input byte value and formats it into the most appropriate size unit
+     * based on the magnitude of the number.
+     *
+     * @param bytes The size in bytes to be formatted.
+     * @return A string representing the size in the most appropriate unit (B, KB, MB, GB).
+     */
+    private fun formatSize(bytes: Long): String {
+        val kb = 1024L
+        val mb = kb * 1024L
+        val gb = mb * 1024L
+        return when {
+            bytes >= gb -> "%.2f GB".format(bytes.toDouble() / gb)
+            bytes >= mb -> "%.2f MB".format(bytes.toDouble() / mb)
+            bytes >= kb -> "%.2f KB".format(bytes.toDouble() / kb)
+            else -> "$bytes B"
+        }
     }
 }

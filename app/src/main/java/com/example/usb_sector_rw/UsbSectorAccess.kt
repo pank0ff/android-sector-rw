@@ -85,6 +85,16 @@ class UsbSectorAccess(
     }
 
     /**
+     * Reads the total size of the USB mass storage device in sectors.
+     * This is derived from the maximum LBA and the block size.
+     *
+     * @return the total number of sectors on the device.
+     */
+    fun getTotalSectors(): Long {
+        return maxLBA + 1 // LBA is zero-based, so the total number of sectors is maxLBA + 1
+    }
+
+    /**
      * Closes the current USB device connection, if any.
      * Releases all associated resources.
      */
