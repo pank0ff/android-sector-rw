@@ -38,7 +38,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var writeBtn: Button
     private lateinit var clearBtn: Button
     private lateinit var scanBtn: Button
+    private lateinit var overwriteBtn: Button
     private lateinit var logText: TextView
+    private lateinit var offsetInput: TextView
 
     /**
      * BroadcastReceiver that handles USB permission responses.
@@ -65,6 +67,8 @@ class MainActivity : AppCompatActivity() {
         clearBtn = findViewById(R.id.clearBtn)
         logText = findViewById(R.id.logText)
         scanBtn = findViewById(R.id.scanBtn)
+        overwriteBtn = findViewById(R.id.overwriteBtn)
+        offsetInput = findViewById(R.id.offsetInput)
 
         dataInput.addTextChangedListener(object : android.text.TextWatcher {
             private var previous = ""
@@ -285,6 +289,17 @@ class MainActivity : AppCompatActivity() {
                 for ((_, device) in deviceList) {
                     val hasPermission = usbManager.hasPermission(device)
 
+                    if (!hasPermission) {
+                        val permissionIntent = PendingIntent.getBroadcast(
+                            this,
+                            0,
+                            Intent("android.hardware.usb.action.USB_PERMISSION"),
+                            PendingIntent.FLAG_IMMUTABLE
+                        )
+                        usbManager.requestPermission(device, permissionIntent)
+                        log("Requested permission for ${device.deviceName}")
+                    }
+
                     val info = StringBuilder()
                     info.appendLine("Device: ${device.deviceName}")
                     info.appendLine("  Vendor ID      : ${device.vendorId}")
@@ -306,19 +321,29 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     log(info.toString())
-
-                    if (!hasPermission) {
-                        val permissionIntent = PendingIntent.getBroadcast(
-                            this,
-                            0,
-                            Intent("android.hardware.usb.action.USB_PERMISSION"),
-                            PendingIntent.FLAG_IMMUTABLE
-                        )
-                        usbManager.requestPermission(device, permissionIntent)
-                        log("Requested permission for ${device.deviceName}")
-                    }
                 }
             }
+        }
+
+        overwriteBtn.setOnClickListener {
+            val usbAccess = UsbSectorAccess(this)
+            val lba = sectorInput.text.toString().toLongOrNull()
+            val offset = offsetInput.text.toString().toIntOrNull()
+            val dataHex = dataInput.text.toString().replace(" ", "")
+
+            if (lba == null || offset == null) {
+                logText.append("\nInvalid sector number or offset")
+                return@setOnClickListener
+            }
+
+            val dataBytes = hexStringToByteArray(dataHex)
+            if (dataBytes == null) {
+                logText.append("\nInvalid hex data format")
+                return@setOnClickListener
+            }
+
+            val success = usbAccess.overwriteSectorBytes(lba, offset, dataBytes)
+            logText.append("\nOverwrite ${if (success) "successful" else "failed"} at LBA=$lba, offset=$offset")
         }
     }
 
@@ -371,5 +396,26 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             null
         }
+    }
+
+    /**
+     * Converts a hexadecimal string (e.g. "1A 2B 3C") into a ByteArray.
+     *
+     * @param hexString The hexadecimal string to convert.
+     * @return The corresponding ByteArray, or null if the string is invalid.
+     */
+    private fun hexStringToByteArray(hexString: String): ByteArray? {
+        val clean = hexString.trim().replace(" ", "").uppercase()
+        val length = clean.length
+        if (length % 2 != 0) {
+            return null // Invalid string length (should be even)
+        }
+
+        val bytes = ByteArray(length / 2)
+        for (i in 0 until length step 2) {
+            val hexPair = clean.substring(i, i + 2)
+            bytes[i / 2] = hexPair.toInt(16).toByte()
+        }
+        return bytes
     }
 }

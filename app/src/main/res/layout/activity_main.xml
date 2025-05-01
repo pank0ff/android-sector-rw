@@ -11,8 +11,15 @@
         android:layout_height="wrap_content" />
 
     <EditText
+        android:id="@+id/offsetInput"
+        android:hint="Offset (bytes)"
+        android:inputType="number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <EditText
         android:id="@+id/dataInput"
-        android:hint="Data to write"
+        android:hint="Data to write (hex)"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
@@ -27,6 +34,12 @@
         android:text="Write Sector"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/overwriteBtn"
+        android:text="Overwrite Bytes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <Button
         android:id="@+id/clearBtn"

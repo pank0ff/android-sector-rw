@@ -291,4 +291,45 @@ class UsbSectorAccess(
 
         return sendCommand(cbw, data, DIR_OUT)
     }
+
+    /**
+     * Partially overwrites one or more sectors starting at the specified LBA, beginning at a given byte offset.
+     * If the data exceeds the remaining bytes in the first sector, it continues into subsequent sectors.
+     *
+     * @param lba the Logical Block Address of the first sector to modify.
+     * @param offset the byte offset within the first sector to start writing.
+     * @param newData the data to write. It may span multiple sectors depending on size and offset.
+     * @return true if all modified sectors are successfully written, false otherwise.
+     */
+    fun overwriteSectorBytes(lba: Long, offset: Int, newData: ByteArray): Boolean {
+        if (offset < 0 || newData.isEmpty()) {
+            Log.e(TAG, "Invalid offset or data size")
+            return false
+        }
+
+        val endOffset = offset + newData.size
+        val sectorsNeeded = (endOffset + blockSize - 1) / blockSize
+        var innerOffset = offset
+
+        for(i in 0 until  sectorsNeeded)
+        {
+            val originalData = readSectors(lba + i, 1)
+            if (originalData == null)
+            {
+                Log.e(TAG, "Failed to read 1 sector(s) from LBA=${lba + i}")
+                return false
+            }
+
+            System.arraycopy(newData, 0, originalData, innerOffset, originalData.size - innerOffset)
+            innerOffset = 0
+
+            val success = writeSectors(lba + i, originalData)
+            if (!success) {
+                Log.e(TAG, "Failed to write modified sectors at LBA=${lba + 1}")
+                return false
+            }
+        }
+
+        return true
+    }
 }
