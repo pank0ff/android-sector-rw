@@ -42,31 +42,45 @@ class UsbSectorAccess(
         for (device in usbManager.deviceList.values) {
             for (i in 0 until device.interfaceCount) {
                 val intf = device.getInterface(i)
-                if (intf.interfaceClass == UsbConstants.USB_CLASS_MASS_STORAGE) {
-                    if (!usbManager.hasPermission(device)) return false
 
-                    val conn = usbManager.openDevice(device)
-                    conn.claimInterface(intf, true)
-                    connection = conn
+                val isMassStorage = (
+                        intf.interfaceClass == UsbConstants.USB_CLASS_MASS_STORAGE &&
+                                intf.interfaceSubclass == 6 &&
+                                intf.interfaceProtocol == 80
+                        )
 
-                    for (j in 0 until intf.endpointCount) {
-                        val ep = intf.getEndpoint(j)
-                        if (ep.type == UsbConstants.USB_ENDPOINT_XFER_BULK) {
-                            if (ep.direction == UsbConstants.USB_DIR_IN) bulkIn = ep
-                            else bulkOut = ep
-                        }
-                    }
+                if (!isMassStorage) continue
 
-                    if (bulkIn == null || bulkOut == null) return false
-
-                    // SCSI: INQUIRY и READ CAPACITY
-                    val inquiryData = scsiInquiry()
-                    Log.d(TAG, "INQUIRY: ${inquiryData?.decodeToString()}")
-                    readCapacity()
-                    return true
+                if (!usbManager.hasPermission(device)) {
+                    Log.w(TAG, "No permission for USB device: ${device.deviceName}")
+                    return false
                 }
+
+                val conn = usbManager.openDevice(device)
+                conn?.claimInterface(intf, true) ?: return false
+                connection = conn
+
+                for (j in 0 until intf.endpointCount) {
+                    val ep = intf.getEndpoint(j)
+                    if (ep.type == UsbConstants.USB_ENDPOINT_XFER_BULK) {
+                        if (ep.direction == UsbConstants.USB_DIR_IN) bulkIn = ep
+                        else bulkOut = ep
+                    }
+                }
+
+                if (bulkIn == null || bulkOut == null) {
+                    Log.e(TAG, "Bulk endpoints not found")
+                    return false
+                }
+
+                val inquiry = scsiInquiry()
+                Log.d(TAG, "INQUIRY: ${inquiry?.decodeToString()?.trim()}")
+                readCapacity()
+                return true
             }
         }
+
+        Log.w(TAG, "No USB Mass Storage device found")
         return false
     }
 
