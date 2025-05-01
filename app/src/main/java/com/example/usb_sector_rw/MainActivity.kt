@@ -43,6 +43,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var offsetInput: TextView
     private lateinit var readBytesBtn: Button
     private lateinit var lengthInput: TextView
+    private lateinit var detailSwitch: Switch
 
     /**
      * BroadcastReceiver that handles USB permission responses.
@@ -73,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         offsetInput = findViewById(R.id.offsetInput)
         lengthInput = findViewById<EditText>(R.id.lengthInput)
         readBytesBtn = findViewById<Button>(R.id.readBytesBtn)
+        detailSwitch = findViewById(R.id.detailSwitch)
 
         dataInput.addTextChangedListener(object : android.text.TextWatcher {
             private var previous = ""
@@ -169,8 +171,12 @@ class MainActivity : AppCompatActivity() {
 
             val data = usbAccess.readSectors(sector, 1)
             if (data != null) {
-                val formatted = formatSectorAsHexAscii(data)
-                log("Read from sector $sector:\n$formatted")
+                val output = if (detailSwitch.isChecked) {
+                    formatSectorAsHexAscii(data)
+                } else {
+                    data.joinToString(" ") { "%02X".format(it) }
+                }
+                log("Read from sector $sector:\n$output")
             } else {
                 log("Read failed for sector $sector")
 
@@ -416,8 +422,12 @@ class MainActivity : AppCompatActivity() {
 
             val result = usbAccess.readSectorBytes(sector, offset, length)
             if (result != null) {
-                val formatted = formatSectorAsHexAscii(result)
-                log("Read $length byte(s) from sector $sector at offset $offset:\n$formatted")
+                val output = if (detailSwitch.isChecked) {
+                    formatSectorAsHexAscii(result)
+                } else {
+                    result.joinToString(" ") { "%02X".format(it) }
+                }
+                log("Read from sector $sector:\n$output")
             } else {
                 log("Read failed")
                 val sense = usbAccess.requestSense()
