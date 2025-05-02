@@ -1,82 +1,149 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@android:color/white">
 
-    <EditText
-        android:id="@+id/sectorInput"
-        android:hint="Sector number"
-        android:inputType="number"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <EditText
-        android:id="@+id/offsetInput"
-        android:hint="Offset (bytes)"
-        android:inputType="number"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <EditText
-        android:id="@+id/dataInput"
-        android:hint="Data to write (hex)"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <EditText
-        android:id="@+id/lengthInput"
-        android:hint="Length (bytes)"
-        android:inputType="number"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <Button
-        android:id="@+id/readBtn"
-        android:text="Read Sector"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <Button
-        android:id="@+id/writeBtn"
-        android:text="Write Sector"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <Button
-        android:id="@+id/overwriteBtn"
-        android:text="Overwrite Bytes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <Button
-        android:id="@+id/clearBtn"
-        android:text="Clear Sector"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-        
-    <Button
-        android:id="@+id/scanBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Scan USB"/>
-    
-    <Button
-        android:id="@+id/readBytesBtn"
-        android:text="Read Bytes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-    <Switch
-        android:id="@+id/detailSwitch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Расширенный вывод"
-        android:checked="true" />
-
-    <TextView
-        android:id="@+id/logText"
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="20dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textIsSelectable="true"
-        android:textSize="14sp"
-        android:paddingTop="16dp"/>
-</LinearLayout>
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:text="USB Sector Tool"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <EditText
+            android:id="@+id/sectorInput"
+            android:hint="Sector number (min 0)"
+            android:inputType="number"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/offsetInput"
+            android:hint="Offset (in bytes)"
+            android:inputType="number"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/lengthInput"
+            android:hint="Length (in bytes)"
+            android:inputType="number"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"/>
+
+        <EditText
+            android:id="@+id/dataInput"
+            android:hint="Data to write (hex: e.g. 01 A4 3F)"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:minLines="2"
+            android:maxLines="4"
+            android:gravity="top|start"/>
+
+        <Switch
+            android:id="@+id/detailSwitch"
+            android:text="Расширенный вывод"
+            android:checked="true"
+            android:layout_marginBottom="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+
+            <Button
+                android:id="@+id/readBtn"
+                android:text="Чтение сектора"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"/>
+
+            <Button
+                android:id="@+id/writeBtn"
+                android:text="Запись сектора"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+
+            <Button
+                android:id="@+id/overwriteBtn"
+                android:text="Перезаписать байты"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"/>
+
+            <Button
+                android:id="@+id/readBytesBtn"
+                android:text="Читать байты"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+
+            <Button
+                android:id="@+id/clearBtn"
+                android:text="Очистить сектор"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"/>
+
+            <Button
+                android:id="@+id/scanBtn"
+                android:text="Сканировать USB"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/logText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Лог будет здесь..."
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:paddingTop="16dp"
+            android:background="#EEEEEE"
+            android:padding="12dp"
+            android:textIsSelectable="true"/>
+    </LinearLayout>
+</ScrollView>
