@@ -1,5 +1,6 @@
 package com.example.usb_sector_rw
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,9 @@ import androidx.appcompat.app.AppCompatActivity
 import android.app.PendingIntent
 import android.os.Build
 import androidx.annotation.RequiresApi
+import kotlin.random.Random
+import com.example.usb_sector_rw.msd.LospDev
+import kotlinx.coroutines.*
 
 /**
  * MainActivity provides a user interface for reading and writing raw sectors
@@ -44,6 +48,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var readBytesBtn: Button
     private lateinit var lengthInput: TextView
     private lateinit var detailSwitch: Switch
+    private lateinit var echoButton: Button
+    private lateinit var stopMeasureButton: Button
+    private lateinit var testMeasureButton: Button
+    private lateinit var btnMeasureExec: Button
+
+    var isRunMeasurment : Boolean = false;
+    private var measureJob: Job? = null
+
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+    private var lospDev = LospDev(this)
 
     /**
      * BroadcastReceiver that handles USB permission responses.
@@ -58,6 +73,7 @@ class MainActivity : AppCompatActivity() {
      *
      * @param savedInstanceState The previously saved state of the activity, if any.
      */
+    @SuppressLint("SetTextI18n")
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,6 +91,10 @@ class MainActivity : AppCompatActivity() {
         lengthInput = findViewById<EditText>(R.id.lengthInput)
         readBytesBtn = findViewById<Button>(R.id.readBytesBtn)
         detailSwitch = findViewById(R.id.detailSwitch)
+        echoButton = findViewById<Button>(R.id.btnEchoTest)
+        stopMeasureButton = findViewById<Button>(R.id.btnStopMeasure)
+        testMeasureButton = findViewById<Button>(R.id.btnMeasureTest)
+        btnMeasureExec = findViewById<Button>(R.id.btnMeasureExec)
 
         dataInput.addTextChangedListener(object : android.text.TextWatcher {
             private var previous = ""
@@ -396,6 +416,37 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        echoButton.setOnClickListener {
+            if (measureJob == null || measureJob?.isActive == false) {
+                measureJob = scope.launch {
+                    isRunMeasurment = true
+                    while (isRunMeasurment) {
+                        val frequency = withContext(Dispatchers.IO) {
+                            getFrec(lospDev)
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            logText.text = "Частота: $frequency Гц"
+                        }
+
+                        delay(1000)
+                    }
+                }
+            }
+        }
+
+        stopMeasureButton.setOnClickListener {
+            isRunMeasurment = false
+        }
+
+        testMeasureButton.setOnClickListener{
+            getFrecTest(lospDev)
+        }
+
+        btnMeasureExec.setOnClickListener{
+            getFrecExec(lospDev)
+        }
+
         readBytesBtn.setOnClickListener {
             val usbAccess = UsbSectorAccess(this)
 
@@ -445,8 +496,9 @@ class MainActivity : AppCompatActivity() {
      *
      * @param message The message string to display in the log area.
      */
+    @SuppressLint("SetTextI18n")
     private fun log(message: String) {
-        logText.append("$message\n")
+        logText.text = "$message\n"
     }
 
     /**
@@ -457,6 +509,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         // Unregister the USB permission receiver when the activity is destroyed
         unregisterReceiver(usbReceiver)
+        scope.cancel()
     }
 
     /**
@@ -546,5 +599,71 @@ class MainActivity : AppCompatActivity() {
             bytes >= kb -> "%.2f KB".format(bytes.toDouble() / kb)
             else -> "$bytes B"
         }
+    }
+
+    /**
+     * Функция для проверки операций чтения и записи для диапазона секторов.
+     *
+     * @param usbDevice Устройство, с которым выполняется работа
+     * @param count Количество секторов, которые нужно проверить
+     * @return true, если все операции прошли успешно, иначе false
+     */
+    fun echoTest(usbDevice: LospDev, count: Long = 0): Boolean {
+        val writeBuffer = ByteArray(512)
+        val readBuffer = ByteArray(512)
+
+        try {
+            for (sector in 10 until count) {
+                Random.nextBytes(writeBuffer)
+
+                if (!usbDevice.sectorWrite(sector.toUInt(), writeBuffer, ::log)) {
+                    log("EchoTest: Не удалось записать сектор $sector")
+                    return false
+                }
+
+                readBuffer.fill(0)
+
+                if (!usbDevice.sectorRead(sector.toUInt(), readBuffer,::log)) {
+                    log("EchoTest: Не удалось прочитать сектор $sector")
+                    return false
+                }
+
+                if (!writeBuffer.contentEquals(readBuffer)) {
+                    log("EchoTest: Несовпадение данных в секторе $sector")
+                    log("Ожидалось: ${writeBuffer.joinToString(" ") { "%02X".format(it) }}")
+                    log("Получено:  ${readBuffer.joinToString(" ") { "%02X".format(it) }}")
+                    return false
+                }
+
+                log("EchoTest: Сектор $sector успешно проверен")
+            }
+
+            return true
+        } catch (e: Exception) {
+            log("EchoTest: Ошибка при echoTest: ${e.message}")
+            return false
+        }
+    }
+
+    fun getFrec(usbDevice: LospDev) : Any
+    {
+        val freq = frecUc(1, usbDevice, ::log)
+
+        if(freq >= 0.0)
+        {
+            return freq
+        }
+
+        return -1
+    }
+
+    fun getFrecTest(usbDevice: LospDev)
+    {
+        frec_test(usbDevice, ::log);
+    }
+
+    fun getFrecExec(usbDevice: LospDev)
+    {
+        frec_exec(usbDevice, ::log)
     }
 }

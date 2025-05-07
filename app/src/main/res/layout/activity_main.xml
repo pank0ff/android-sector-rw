@@ -132,8 +132,61 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"/>
+            
+        </LinearLayout>
+            
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+            <Button
+                android:id="@+id/btnMeasureTest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Тест непрерывности измерений"
+                android:layout_marginTop="8dp"
+            />
+        </LinearLayout>
+        
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+            <Button
+                android:id="@+id/btnMeasureExec"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Непрерывное измерение + файл"
+                android:layout_marginTop="8dp"
+            />
         </LinearLayout>
 
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+            <Button
+                android:id="@+id/btnEchoTest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Запуск измерения"
+                android:layout_marginTop="8dp"
+            />
+            <Button
+                android:id="@+id/btnStopMeasure"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Стоп измерения"
+                android:layout_marginTop="8dp"
+            />
+        </LinearLayout>
+        
         <TextView
             android:id="@+id/logText"
             android:layout_width="match_parent"
