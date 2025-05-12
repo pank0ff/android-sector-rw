@@ -19,122 +19,139 @@
             android:layout_marginBottom="16dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
-
-        <EditText
-            android:id="@+id/sectorInput"
-            android:hint="Sector number (min 0)"
-            android:inputType="number"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"/>
-
-        <EditText
-            android:id="@+id/offsetInput"
-            android:hint="Offset (in bytes)"
-            android:inputType="number"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"/>
-
-        <EditText
-            android:id="@+id/lengthInput"
-            android:hint="Length (in bytes)"
-            android:inputType="number"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"/>
-
-        <EditText
-            android:id="@+id/dataInput"
-            android:hint="Data to write (hex: e.g. 01 A4 3F)"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:minLines="2"
-            android:maxLines="4"
-            android:gravity="top|start"/>
-
-        <Switch
-            android:id="@+id/detailSwitch"
-            android:text="Расширенный вывод"
-            android:checked="true"
-            android:layout_marginBottom="16dp"
+            
+        <ImageButton
+            android:id="@+id/toggleButton"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_arrow_down"
+            android:contentDescription="Toggle inputs"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_gravity="center_horizontal"
+            android:rotation="0"
+            android:layout_marginBottom="8dp"/>
 
         <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginBottom="12dp">
-
-            <Button
-                android:id="@+id/readBtn"
-                android:text="Чтение сектора"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"/>
-
-            <Button
-                android:id="@+id/writeBtn"
-                android:text="Запись сектора"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"/>
+                    android:id="@+id/toggleContainer"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone">
+                    <EditText
+                    android:id="@+id/sectorInput"
+                    android:hint="Sector number (min 0)"
+                    android:inputType="number"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"/>
+                    
+                    <EditText
+                    android:id="@+id/offsetInput"
+                    android:hint="Offset (in bytes)"
+                    android:inputType="number"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"/>
+                    
+                    <EditText
+                    android:id="@+id/lengthInput"
+                    android:hint="Length (in bytes)"
+                    android:inputType="number"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"/>
+                    
+                    <EditText
+                    android:id="@+id/dataInput"
+                    android:hint="Data to write (hex: e.g. 01 A4 3F)"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:minLines="2"
+                    android:maxLines="4"
+                    android:gravity="top|start"/>
+                    
+                    <Switch
+                    android:id="@+id/detailSwitch"
+                    android:text="Расширенный вывод"
+                    android:checked="true"
+                    android:layout_marginBottom="16dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+                    
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:layout_marginBottom="12dp">
+                        
+                        <Button
+                        android:id="@+id/readBtn"
+                        android:text="Чтение сектора"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"/>
+                        
+                        <Button
+                        android:id="@+id/writeBtn"
+                        android:text="Запись сектора"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"/>
+                    </LinearLayout>
+                    
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:layout_marginBottom="12dp">
+                        
+                        <Button
+                        android:id="@+id/overwriteBtn"
+                        android:text="Перезаписать байты"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"/>
+                        
+                        <Button
+                        android:id="@+id/readBytesBtn"
+                        android:text="Читать байты"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"/>
+                    </LinearLayout>
+                    
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:layout_marginBottom="12dp">
+                        
+                        <Button
+                        android:id="@+id/clearBtn"
+                        android:text="Очистить сектор"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"/>
+                        
+                        <Button
+                        android:id="@+id/scanBtn"
+                        android:text="Сканировать USB"
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"/>
+                        
+                    </LinearLayout>
         </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginBottom="12dp">
-
-            <Button
-                android:id="@+id/overwriteBtn"
-                android:text="Перезаписать байты"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"/>
-
-            <Button
-                android:id="@+id/readBytesBtn"
-                android:text="Читать байты"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginBottom="12dp">
-
-            <Button
-                android:id="@+id/clearBtn"
-                android:text="Очистить сектор"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"/>
-
-            <Button
-                android:id="@+id/scanBtn"
-                android:text="Сканировать USB"
-                android:layout_weight="1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"/>
-            
-        </LinearLayout>
-            
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
@@ -160,11 +177,51 @@
                 android:id="@+id/btnMeasureExec"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Непрерывное измерение + файл"
+                android:text="Частота + файл"
                 android:layout_marginTop="8dp"
             />
+            <Button
+            android:id="@+id/btnMeasureExecStop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Остановка записи"
+            android:layout_marginTop="8dp"
+            />
         </LinearLayout>
-
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginBottom="12dp">
+            <Button
+                android:id="@+id/graphButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Открыть график"
+                android:layout_marginTop="16dp"/>
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="6dp">
+            <Button
+                android:id="@+id/ClearLog"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Очистить лог"
+                android:layout_marginTop="8dp"
+                />
+            <Switch
+                android:id="@+id/clearOutSwitch"
+                android:text="Авто-чистка вывода"
+                android:checked="true"
+                android:layout_marginTop="6dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal">
+
+        <Button
+            android:id="@+id/btnMeasureTest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Тест непрерывности измерений"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnMeasureExec"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Частота + файл"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnMeasureExecStop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Остановка записи"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnEchoTest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Запуск измерения"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/btnStopMeasure"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Стоп измерения"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/logText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Лог будет здесь..."
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:paddingTop="16dp"
+            android:background="#EEEEEE"
+            android:padding="12dp"
+            android:textIsSelectable="true"/>
+    </LinearLayout>
+</ScrollView>
+

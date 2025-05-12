@@ -1199,20 +1199,20 @@ data class FmPhasesStruct(
 ) {
     companion object {
         var SIZE_BYTES: Int =
-            2 +  // structType: UShort
-            2 +  // structSize: UShort
-            2 +  // maxSize: UShort
-            2 +  // validSize: UShort
-            4 +  // fixCount: UInt
-            4 +  // systemPhase: Int
-            1 +  // phasesDim: UByte
-            3 +  // padding (для выравнивания после UByte -> чтобы systemClock был кратен 4)
-            4 +  // systemClock: UInt
-            4 +  // powAverage: Float
-            4 +  // tempAverage: Float
-            4 +  // powerHV: Float
-            4 +  // powerHVComp: Float
-            4 +  // dozeKoef: Float
+            2 +  // structType: UShort [0-1]
+            2 +  // structSize: UShort [2-3]
+            2 +  // maxSize: UShort [4-5]
+            2 +  // validSize: UShort [6-7]
+            4 +  // fixCount: UInt [8-11]
+            4 +  // systemPhase: Int[12-15]
+            1 +  // phasesDim: UByte [16]
+            3 +  // padding (для выравнивания после UByte -> чтобы systemClock был кратен 4) [17-19]
+            4 +  // systemClock: UInt [20-23]
+            4 +  // powAverage: Float [24-27]
+            4 +  // tempAverage: Float [28-31]
+            4 +  // powerHV: Float [32 - 35]
+            4 +  // powerHVComp: Float [36 - 39]
+            4 +  // dozeKoef: Float [40 - 43]
             PHASES_BUF_SIZE.toInt() // phases: ByteArray
 
         @OptIn(ExperimentalUnsignedTypes::class)

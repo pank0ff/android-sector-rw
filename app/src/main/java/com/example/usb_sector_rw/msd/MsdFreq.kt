@@ -3,9 +3,9 @@ package com.example.usb_sector_rw
 import CmdToPram
 import FmFrecStruct
 import FmPhasesStruct
+import PHASES_BUF_SIZE
 import SectorAnswer
 import SectorCmd
-import android.R.attr.min
 import com.example.usb_sector_rw.msd.LospDev
 import java.io.PrintWriter
 import kotlin.math.max
@@ -113,9 +113,8 @@ fun frec_test(lospDev : LospDev, log: (String) -> Unit) : Boolean
 }
 
 @OptIn(ExperimentalUnsignedTypes::class)
-fun frec_exec(lospDev : LospDev, log: (String) -> Unit)
+fun frec_exec(lospDev : LospDev, log: (String) -> Unit, call_last : Boolean)
 {
-    var p = FmPhasesStruct.fromByteArrayToFmPhasesStruct(answer.dataOut)
     val cmd = SectorCmd()
 
     cmd.code = CmdToPram.PRAM_GET_FW_PHASES.value
@@ -124,12 +123,14 @@ fun frec_exec(lospDev : LospDev, log: (String) -> Unit)
     lospDev.lospExecCmd(cmd, log)
     lospDev.getLospAnswer(cmd.code, answer, log)
 
+    var p = FmPhasesStruct.fromByteArrayToFmPhasesStruct(answer.dataOut)
+
     if((p.validSize.toInt() != 0) && (fix_count_exec.toUInt() != p.fixCount))
     {
-        var count = if (fix_count == 0UL) {
+        var count = if (fix_count_exec == 0UL) {
             p.validSize.toInt()
         } else {
-            minOf((p.fixCount - fix_count).toInt(), p.maxSize.toInt())
+            minOf((p.fixCount - fix_count_exec).toInt(), p.maxSize.toInt())
         }
 
         var index : Int = p.validSize.toInt() - 0;
@@ -137,10 +138,10 @@ fun frec_exec(lospDev : LospDev, log: (String) -> Unit)
 
         while ((count-- > 0) && (--index > 0))
         {
-            var m : ULong = p.phases[index * 2].toULong()  - p.phases[index * 2 - 2].toULong()
-            var n : ULong = p.phases[index * 2 + 1].toULong()  - p.phases[index * 2 - 1].toULong()
+            var m : ULong = getULongFromByteArray(p.phases, index * 2) - getULongFromByteArray(p.phases, index * 2 - 2)
+            var n : ULong = getULongFromByteArray(p.phases, index * 2 + 1) - getULongFromByteArray(p.phases, index * 2 - 1)
 
-            if(n.toInt() == 0)
+            if(n == 0uL)
             {
                 log("\n\rНет сигнала на входе частотомера\n\r");
                 cycle_av = 0u
@@ -172,17 +173,18 @@ fun frec_exec(lospDev : LospDev, log: (String) -> Unit)
             if(tick_stop.toInt() == 0)
             {
                 frec_old = frec_av;
-                // frec to file TODO
-                // tick_stop = tick_end( pcmd_option->init( _T("-a" ), _T("5") ) ); TODO
+//                FrequencyLogger.frecToFile(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0u, call_last, answer) TODO
+                 tick_stop = TimeUtils.tickEnd("5");
             }
 
-            if (((accuracy < 1e-99))/* && !timeOut_ok( tick_stop )) TODO*/
+            if (call_last || ((accuracy < 1e-99)) && !TimeUtils.timeoutOk( tick_stop )
                 || ((accuracy > 0) && (cycle_av > max (1f, 1e3f / (accuracy * accuracy)).toUInt()) && (period_acc < accuracy)))
             {
                 frec_old = frec_av;
                 period_acc_old = period_acc;
-                // frec to file TODO
-//                tick_stop += (u64)(0.5 + 1e6 * max( 0.01, atof( pcmd_option->init( _T("-a" ), _T("5") ) ) )); TODO
+//                FrequencyLogger.frecToFile(frec_current, frec_old, frec_min, frec_max, frec_rms, frec_acc, period_acc, m_sum, call_last, answer) TODO
+                val seconds = 0.5 + max(0.01, /*"5".toDoubleOrNull() ?:*/ 5.0)
+                tick_stop += (1_000_000.0 * seconds).toULong()
                 m_sum = 0u
             }
         }
@@ -200,4 +202,17 @@ fun frec_exec(lospDev : LospDev, log: (String) -> Unit)
     {
         log("Частота = $frec_old +- $period_acc_old Гц")
     }
+}
+
+fun getULongFromByteArray(bytes: ByteArray, index: Int): ULong {
+    val offset = index * 8
+
+    return ((bytes[offset + 7].toULong() and 0xFFu) shl 56) or
+            ((bytes[offset + 6].toULong() and 0xFFu) shl 48) or
+            ((bytes[offset + 5].toULong() and 0xFFu) shl 40) or
+            ((bytes[offset + 4].toULong() and 0xFFu) shl 32) or
+            ((bytes[offset + 3].toULong() and 0xFFu) shl 24) or
+            ((bytes[offset + 2].toULong() and 0xFFu) shl 16) or
+            ((bytes[offset + 1].toULong() and 0xFFu) shl 8)  or
+            ((bytes[offset + 0].toULong() and 0xFFu))
 }

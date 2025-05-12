@@ -1,21 +1,65 @@
 package com.example.usb_sector_rw
 
+import FrequencyLogger
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbManager
-import android.os.Bundle
-import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
-import android.app.PendingIntent
 import android.os.Build
+import android.os.Bundle
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.Switch
+import android.widget.TextView
 import androidx.annotation.RequiresApi
-import kotlin.random.Random
+import androidx.appcompat.app.AppCompatActivity
 import com.example.usb_sector_rw.msd.LospDev
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.random.Random
+
+
+object LospDevVariables {
+    @SuppressLint("StaticFieldLeak")
+    lateinit var lospDev: LospDev
+    lateinit var log: (String) -> Unit
+    var isStopFrecExecMeasurment : Boolean = false;
+
+    fun getFrec() : Float
+    {
+        val freq = frecUc(1, lospDev, log)
+
+        return if (freq >= 0.0) {
+            val formattedFreq = "%.2f".format(freq)
+            formattedFreq.replace(',', '.').toFloat()
+        } else {
+            -1f
+        }
+    }
+
+    fun getFrecTest()
+    {
+        frec_test(lospDev, log);
+    }
+
+    fun getFrecExec()
+    {
+        frec_exec(lospDev, log, isStopFrecExecMeasurment)
+    }
+}
 
 /**
  * MainActivity provides a user interface for reading and writing raw sectors
@@ -48,17 +92,23 @@ class MainActivity : AppCompatActivity() {
     private lateinit var readBytesBtn: Button
     private lateinit var lengthInput: TextView
     private lateinit var detailSwitch: Switch
+    private lateinit var clearOutSwitch: Switch
     private lateinit var echoButton: Button
     private lateinit var stopMeasureButton: Button
     private lateinit var testMeasureButton: Button
     private lateinit var btnMeasureExec: Button
+    private lateinit var btnMeasureExecStop: Button
+    private lateinit var graphButton: Button
+    private lateinit var ClearLog: Button
+    private lateinit var  toggleButton: ImageButton
+    private lateinit var toggleContainer: LinearLayout
 
     var isRunMeasurment : Boolean = false;
+    var isStopFrecExecMeasurment : Boolean = false;
     private var measureJob: Job? = null
+    var expanded = false
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
-    private var lospDev = LospDev(this)
 
     /**
      * BroadcastReceiver that handles USB permission responses.
@@ -95,6 +145,16 @@ class MainActivity : AppCompatActivity() {
         stopMeasureButton = findViewById<Button>(R.id.btnStopMeasure)
         testMeasureButton = findViewById<Button>(R.id.btnMeasureTest)
         btnMeasureExec = findViewById<Button>(R.id.btnMeasureExec)
+        clearOutSwitch = findViewById(R.id.clearOutSwitch)
+        btnMeasureExecStop = findViewById(R.id.btnMeasureExecStop)
+        graphButton = findViewById(R.id.graphButton)
+        ClearLog = findViewById(R.id.ClearLog)
+        toggleButton = findViewById(R.id.toggleButton)
+        toggleContainer = findViewById(R.id.toggleContainer)
+
+        FrequencyLogger.init(this)
+        LospDevVariables.lospDev = LospDev(this)
+        LospDevVariables.log = ::log
 
         dataInput.addTextChangedListener(object : android.text.TextWatcher {
             private var previous = ""
@@ -166,6 +226,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
         registerReceiver(usbReceiver, filter, RECEIVER_NOT_EXPORTED)
+
+
+        toggleButton.setOnClickListener {
+            expanded = !expanded
+            toggleContainer.visibility = if (expanded) View.VISIBLE else View.GONE
+            toggleButton.animate().rotation(if (expanded) 180f else 0f).setDuration(250).start()
+        }
 
         // Read button click: attempts to read one sector from the USB device and display it in hex.
         readBtn.setOnClickListener {
@@ -422,7 +489,7 @@ class MainActivity : AppCompatActivity() {
                     isRunMeasurment = true
                     while (isRunMeasurment) {
                         val frequency = withContext(Dispatchers.IO) {
-                            getFrec(lospDev)
+                            getFrec()
                         }
 
                         withContext(Dispatchers.Main) {
@@ -440,11 +507,27 @@ class MainActivity : AppCompatActivity() {
         }
 
         testMeasureButton.setOnClickListener{
-            getFrecTest(lospDev)
+            LospDevVariables.getFrecTest()
         }
 
         btnMeasureExec.setOnClickListener{
-            getFrecExec(lospDev)
+            isStopFrecExecMeasurment = false
+            LospDevVariables.getFrecExec()
+        }
+
+        btnMeasureExecStop.setOnClickListener{
+            isStopFrecExecMeasurment = true
+            LospDevVariables.getFrecExec()
+//            FrequencyLogger.getCurrentLogFile()?.let { openLogFile(this, it) } TODO
+        }
+
+        graphButton.setOnClickListener {
+            val intent = Intent(this, GraphActivity::class.java)
+            startActivity(intent)
+        }
+
+        ClearLog.setOnClickListener {
+            logText.text = ""
         }
 
         readBytesBtn.setOnClickListener {
@@ -498,7 +581,14 @@ class MainActivity : AppCompatActivity() {
      */
     @SuppressLint("SetTextI18n")
     private fun log(message: String) {
-        logText.text = "$message\n"
+        if(clearOutSwitch.isChecked)
+        {
+            logText.text = "$message\n"
+        }
+        else
+        {
+            logText.append("$message\n")
+        }
     }
 
     /**
@@ -645,9 +735,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun getFrec(usbDevice: LospDev) : Any
+    fun getFrec() : Any
     {
-        val freq = frecUc(1, usbDevice, ::log)
+        val freq = frecUc(1, LospDevVariables.lospDev, ::log)
 
         if(freq >= 0.0)
         {
@@ -655,15 +745,5 @@ class MainActivity : AppCompatActivity() {
         }
 
         return -1
-    }
-
-    fun getFrecTest(usbDevice: LospDev)
-    {
-        frec_test(usbDevice, ::log);
-    }
-
-    fun getFrecExec(usbDevice: LospDev)
-    {
-        frec_exec(usbDevice, ::log)
     }
 }
